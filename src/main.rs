@@ -83,14 +83,14 @@ fn main() {
             .unwrap_or_else(|e| error_handler(e));
         let mut result = basehan::decode(&buffer).unwrap_or_else(|err| error_handler(err));
         // let result = String::from_utf8(result).expect("Internal bugs occurred when decoding.").to_string();
-        result.push('\n' as u8);
+        // result.push('\n' as u8);
         io::stdout()
             .write_all(&result)
             .map_err(|e| BaseHanError::InternalError(format!("Failed to write to stdout: {:?}", e)))
             .unwrap_or_else(|e| error_handler(e));
     } else {
         let mut result = basehan::encode(buffer).unwrap_or_else(|err| error_handler(err));
-        result.push('\n');
+        // result.push('\n');
         io::stdout()
             .write_all(result.as_bytes())
             .map_err(|e| BaseHanError::InternalError(format!("Failed to write to stdout: {:?}", e)))
