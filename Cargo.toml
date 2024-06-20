@@ -1,7 +1,7 @@
 [package]
 name = "basehan"
 description = "A data encryption method using Chinese characters. Kind of like base64."
-version = "0.2.4"
+version = "0.9.0"
 edition = "2021"
 license = "MIT"
 license-file = "LICENCE"

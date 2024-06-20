@@ -1,6 +1,12 @@
+pub mod v1;
+
+use std::collections::VecDeque;
+use std::io::Write;
+
 const BASE_OFFSET: u32 = 0x4e00;
 const CODE_RANGE: u32 = 0x1FFF;
 const MULTIBYTE_SIGN: u32 = 0x8e00;
+
 
 #[derive(Debug)]
 pub enum BaseHanError {
@@ -60,6 +66,7 @@ pub fn encode<T: AsRef<[u8]>>(raw: T) -> Result<String, BaseHanError> {
     }
     Ok(result.iter().collect())
 }
+
 pub fn decode(basehan: &String) -> Result<Vec<u8>, BaseHanError> {
     // check multi bytes tail
     let mut is_invalid = false;
@@ -119,6 +126,9 @@ impl BaseHan for String {
         decode(self)
     }
 }
+
+
+
 //     pub struct BaseHanEncoder {
 //         buff: u32,
 //         nbits: u32,

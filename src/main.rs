@@ -1,9 +1,12 @@
-use basehan::BaseHanError;
-use clap::Parser;
 use std::{
-    io::{self, stdin, Read, Write},
+    io::{self, Read, stdin, Write},
     process::exit,
 };
+
+use clap::Parser;
+
+use basehan::BaseHanError;
+use basehan::v1::{BaseHanDecoder, BaseHanEncoder};
 
 // Base-Han is a command line tool to encode/decode binary data to/from Base-Han.
 #[derive(Debug, Parser)]
@@ -14,6 +17,8 @@ struct Args {
     decode: bool,
     #[clap(short, long, default_value = "false")]
     interactive: bool,
+    #[clap(short, long, default_value = "3145728")]
+    chunk_size: usize,
 }
 
 const ENCODE_PROMPT: &str = "encode> ";
@@ -62,11 +67,50 @@ fn interactive_shell(decode: bool) {
     println!("Exit");
 }
 
-fn main() {
-    let args = Args::parse();
+
+fn v1(args: Args) {
+    if args.decode {
+        let mut buf = vec![0u8; args.chunk_size];
+        let mut decoder = BaseHanDecoder::new();
+        loop {
+            buf.fill(0);
+            let n = io::stdin().read(&mut buf).unwrap();
+
+            if n == 0 {
+                if let Some(_) = decoder.finish() {
+                    panic!("The string input is corrupted!")
+                }
+                break;
+            }
+            let char_buf: Vec<char> = String::from_utf8_lossy(&buf).chars().collect();
+            let out = decoder.update(char_buf).unwrap();
+            io::stdout().write_all(&out).unwrap();
+            io::stdout().flush().unwrap();
+        }
+    } else {
+        let mut buf = vec![0u8; args.chunk_size];
+        let mut encoder = BaseHanEncoder::new();
+        loop {
+            buf.fill(0);
+            let n = io::stdin().read(&mut buf).unwrap();
+            if n == 0 {
+                let out = [encoder.finish()];
+                io::stdout().write_all(String::from_iter(out).as_bytes()).unwrap();
+                break;
+            }
+            let out = encoder.update(&buf[..n]).unwrap();
+            io::stdout().write_all(String::from_iter(out).as_bytes()).unwrap();
+            io::stdout().flush().unwrap();
+        }
+    }
+    io::stdout().flush().unwrap();
+}
+
+#[allow(dead_code)]
+fn v0(args: Args) {
+
     if args.interactive {
-        interactive_shell(args.decode);
-        return;
+        return interactive_shell(args.decode);
     }
 
     let mut buffer = Vec::new();
@@ -100,6 +144,11 @@ fn main() {
         .flush()
         .map_err(|e| BaseHanError::InternalError(format!("Failed to write to stdout: {:?}", e)))
         .unwrap_or_else(|e| error_handler(e));
+}
+
+fn main() {
+    let args = Args::parse();
+    return v1(args);
 }
 
 fn error_handler(err: BaseHanError) -> ! {
